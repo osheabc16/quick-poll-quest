@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, BarChart3 } from "lucide-react";
 
 interface Poll {
   id: string;
@@ -42,6 +42,7 @@ export default function Vote() {
   const [userVote, setUserVote] = useState<Vote | null>(null);
   const [results, setResults] = useState<VoteResults | null>(null);
   const [pollNotFound, setPollNotFound] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -95,6 +96,7 @@ export default function Vote() {
       setHasVoted(true);
       setUserVote(vote);
       fetchResults();
+      setShowResults(true);
     }
   };
 
@@ -112,8 +114,8 @@ export default function Vote() {
         return;
       }
 
-      const optionACount = data.filter(vote => vote.option_choice === "option_a").length;
-      const optionBCount = data.filter(vote => vote.option_choice === "option_b").length;
+      const optionACount = data.filter(vote => vote.option_choice === poll?.option_a).length;
+      const optionBCount = data.filter(vote => vote.option_choice === poll?.option_b).length;
       const totalVotes = optionACount + optionBCount;
 
       setResults({
@@ -161,9 +163,14 @@ export default function Vote() {
       setUserVote(voteData);
       
       toast({
-        title: "Vote Submitted!",
-        description: "Thanks for participating in this poll.",
+        title: "Vote Submitted! 🗳️",
+        description: `You're now on Team ${selectedOption === 'option_a' ? poll.option_a : poll.option_b}!`,
       });
+
+      // Smooth transition to results
+      setTimeout(() => {
+        setShowResults(true);
+      }, 500);
 
       // Fetch updated results
       await fetchResults();
@@ -248,8 +255,8 @@ export default function Vote() {
               {isPollClosed() 
                 ? "This poll is now closed." 
                 : hasVoted 
-                  ? "You're on Team " + (userVote?.option_choice === "option_a" ? poll.option_a : poll.option_b) + "! Here's the current vote breakdown."
-                  : "Vote once and see how your pick is doing. Final results unlock after the poll ends."
+                  ? `You're on Team ${userVote?.option_choice === poll.option_a ? poll.option_a : poll.option_b}! Here's the current vote breakdown.`
+                  : "Choose your side and see live results instantly!"
               }
             </p>
           </CardHeader>
@@ -265,57 +272,87 @@ export default function Vote() {
                 </Button>
               </div>
             </CardContent>
-          ) : hasVoted ? (
-            <CardContent className="space-y-6">
-              {/* Show results after voting */}
+          ) : hasVoted && showResults ? (
+            <CardContent className="space-y-6 animate-fade-in">
+              {/* Voter Status Banner */}
+              <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-4 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span className="font-semibold text-primary">
+                    You voted for {userVote?.option_choice === poll.option_a ? poll.option_a : poll.option_b}!
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Here are the live results visible only to you as a voter
+                </p>
+              </div>
+
+              {/* Live Results */}
               {results && (
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className={`font-medium ${userVote?.option_choice === "option_a" ? "text-primary" : ""}`}>
-                        {poll.option_a}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {getOptionPercentage(results.option_a_count)}%
-                      </span>
-                    </div>
-                    <Progress 
-                      value={getOptionPercentage(results.option_a_count)} 
-                      className="h-3"
-                    />
+                  <div className="flex items-center gap-2 mb-3">
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">Live Vote Breakdown</span>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className={`font-medium ${userVote?.option_choice === "option_b" ? "text-primary" : ""}`}>
-                        {poll.option_b}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {getOptionPercentage(results.option_b_count)}%
-                      </span>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className={`font-medium ${userVote?.option_choice === poll.option_a ? "text-primary font-bold" : ""}`}>
+                          {poll.option_a}
+                          {userVote?.option_choice === poll.option_a && " 👈"}
+                        </span>
+                        <span className="text-sm font-medium">
+                          {results.option_a_count} votes ({getOptionPercentage(results.option_a_count)}%)
+                        </span>
+                      </div>
+                      <Progress 
+                        value={getOptionPercentage(results.option_a_count)} 
+                        className="h-3"
+                      />
                     </div>
-                    <Progress 
-                      value={getOptionPercentage(results.option_b_count)} 
-                      className="h-3"
-                    />
-                  </div>
 
-                  <p className="text-center text-sm text-muted-foreground">
-                    Total votes: {results.total_votes}
-                  </p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className={`font-medium ${userVote?.option_choice === poll.option_b ? "text-primary font-bold" : ""}`}>
+                          {poll.option_b}
+                          {userVote?.option_choice === poll.option_b && " 👈"}
+                        </span>
+                        <span className="text-sm font-medium">
+                          {results.option_b_count} votes ({getOptionPercentage(results.option_b_count)}%)
+                        </span>
+                      </div>
+                      <Progress 
+                        value={getOptionPercentage(results.option_b_count)} 
+                        className="h-3"
+                      />
+                    </div>
+
+                    <p className="text-center text-sm text-muted-foreground pt-2">
+                      Total votes: {results.total_votes}
+                    </p>
+                  </div>
                 </div>
               )}
 
-              {/* Show user's comment if they left one */}
+              {/* User's Comment (Read-Only) */}
               {userVote?.comment && (
-                <div className="border rounded-md p-3 bg-muted/50">
-                  <p className="text-sm font-medium mb-1">Your comment:</p>
-                  <p className="text-sm text-muted-foreground">{userVote.comment}</p>
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Your Comment</span>
+                  </div>
+                  <div className="bg-background/50 rounded p-3 border-l-4 border-primary">
+                    <p className="text-sm italic">"{userVote.comment}"</p>
+                  </div>
                 </div>
               )}
 
-              <div className="text-center text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
-                Final results and all comments will be visible to everyone after the poll closes.
+              {/* Final Results Message */}
+              <div className="text-center text-sm bg-gradient-to-r from-muted/50 to-muted/30 p-4 rounded-lg border">
+                <p className="text-muted-foreground">
+                  📊 Final results and all comments will be visible to everyone after the poll closes.
+                </p>
               </div>
             </CardContent>
           ) : (
@@ -323,37 +360,38 @@ export default function Vote() {
               {/* Voting options */}
               <div className="space-y-3">
                 <Button
-                  variant={selectedOption === "option_a" ? "default" : "outline"}
-                  onClick={() => setSelectedOption("option_a")}
-                  className="w-full h-auto p-6 text-left justify-start"
+                  variant={selectedOption === poll.option_a ? "default" : "outline"}
+                  onClick={() => setSelectedOption(poll.option_a)}
+                  className="w-full h-auto p-6 text-left justify-start hover-scale transition-all duration-200"
                   size="lg"
                 >
                   <div>
-                    <div className="font-medium">{poll.option_a}</div>
+                    <div className="font-medium text-lg">{poll.option_a}</div>
                   </div>
                 </Button>
 
                 <Button
-                  variant={selectedOption === "option_b" ? "default" : "outline"}
-                  onClick={() => setSelectedOption("option_b")}
-                  className="w-full h-auto p-6 text-left justify-start"
+                  variant={selectedOption === poll.option_b ? "default" : "outline"}
+                  onClick={() => setSelectedOption(poll.option_b)}
+                  className="w-full h-auto p-6 text-left justify-start hover-scale transition-all duration-200"
                   size="lg"
                 >
                   <div>
-                    <div className="font-medium">{poll.option_b}</div>
+                    <div className="font-medium text-lg">{poll.option_b}</div>
                   </div>
                 </Button>
               </div>
 
               {/* Comment input (if enabled and option selected) */}
               {selectedOption && poll.allow_comments && (
-                <div className="space-y-2">
+                <div className="space-y-2 animate-fade-in">
                   <label className="text-sm font-medium">Want to add a reason?</label>
                   <Textarea
                     placeholder="Your comment is anonymous and will appear with the final results."
                     value={comment}
                     onChange={(e) => setComment(e.target.value.slice(0, 200))}
                     className="min-h-[80px]"
+                    disabled={submitting}
                   />
                   <p className="text-xs text-muted-foreground">
                     {comment.length}/200 characters
@@ -365,10 +403,17 @@ export default function Vote() {
               <Button
                 onClick={submitVote}
                 disabled={!selectedOption || submitting}
-                className="w-full"
+                className="w-full hover-scale transition-all duration-200"
                 size="lg"
               >
-                {submitting ? "Submitting..." : "Submit Vote"}
+                {submitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Submitting Vote...
+                  </div>
+                ) : (
+                  "Submit Vote"
+                )}
               </Button>
             </CardContent>
           )}
