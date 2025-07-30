@@ -260,38 +260,6 @@ const Create = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="w-5 h-5" />
-                    Quick Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button onClick={resetForm} variant="outline" className="w-full justify-start">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Another Poll
-                  </Button>
-                  <Button 
-                    onClick={() => navigate("/dashboard")} 
-                    variant="outline" 
-                    className="w-full justify-start"
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Go to My Polls
-                  </Button>
-                  <Button 
-                    onClick={() => navigate(`/poll/${createdPollId}`)} 
-                    variant="default" 
-                    className="w-full justify-start"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    View Public Poll Page
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Right Column - Voting Experience */}
