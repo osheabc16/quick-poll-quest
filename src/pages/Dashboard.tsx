@@ -213,12 +213,6 @@ const Dashboard = () => {
       </header>
       
       <main className="max-w-6xl mx-auto p-6">
-        <div className="mb-6">
-          <Button onClick={() => navigate("/create")} size="lg">
-            <Plus className="w-4 h-4 mr-2" />
-            Create New Poll
-          </Button>
-        </div>
         {loadingPolls ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-pulse">Loading polls...</div>
@@ -231,7 +225,7 @@ const Dashboard = () => {
             </p>
             <Button onClick={() => navigate("/create")} size="lg">
               <Plus className="w-4 h-4 mr-2" />
-              Create Your First Poll
+              Create New Poll
             </Button>
           </div>
         ) : (
