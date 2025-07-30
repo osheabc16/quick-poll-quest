@@ -202,23 +202,23 @@ const Dashboard = () => {
             <p className="text-muted-foreground">View, share, or close your polls. Let the debates begin!</p>
           </div>
           <div className="flex items-center gap-4">
-            <Button onClick={() => navigate("/create")} size="lg">
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Poll
+            <span className="text-sm text-muted-foreground">
+              Welcome, {user.email}
+            </span>
+            <Button variant="outline" onClick={signOut}>
+              Sign Out
             </Button>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Welcome, {user.email}
-              </span>
-              <Button variant="outline" onClick={signOut}>
-                Sign Out
-              </Button>
-            </div>
           </div>
         </div>
       </header>
       
       <main className="max-w-6xl mx-auto p-6">
+        <div className="mb-6">
+          <Button onClick={() => navigate("/create")} size="lg">
+            <Plus className="w-4 h-4 mr-2" />
+            Create New Poll
+          </Button>
+        </div>
         {loadingPolls ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-pulse">Loading polls...</div>
