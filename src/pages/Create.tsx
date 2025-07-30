@@ -26,6 +26,9 @@ const Create = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdPollId, setCreatedPollId] = useState<string | null>(null);
+  const [createdPollData, setCreatedPollData] = useState<any>(null);
+  const [isVoting, setIsVoting] = useState(false);
+  const [hasVoted, setHasVoted] = useState(false);
 
   if (loading) {
     return (
@@ -92,6 +95,7 @@ const Create = () => {
       if (error) throw error;
 
       setCreatedPollId(data.id);
+      setCreatedPollData(data);
       toast({
         title: "Poll created successfully! 🎉",
         description: "Your poll is ready to share with the world",
@@ -120,6 +124,38 @@ const Create = () => {
     });
   };
 
+  const handleVote = async (choice: string) => {
+    if (!createdPollId || hasVoted) return;
+    
+    setIsVoting(true);
+    try {
+      const { error } = await supabase
+        .from("votes")
+        .insert({
+          poll_id: createdPollId,
+          option_choice: choice,
+          voter_ip: null, // We don't track IP for authenticated users
+        });
+
+      if (error) throw error;
+
+      setHasVoted(true);
+      toast({
+        title: "Vote recorded! 🗳️",
+        description: `You voted for "${choice}"`,
+      });
+    } catch (error) {
+      console.error("Error voting:", error);
+      toast({
+        title: "Error",
+        description: "Failed to record vote. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       question: "",
@@ -130,6 +166,8 @@ const Create = () => {
       commentPrompt: "",
     });
     setCreatedPollId(null);
+    setCreatedPollData(null);
+    setHasVoted(false);
   };
 
   if (createdPollId) {
@@ -162,6 +200,39 @@ const Create = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Voting Section */}
+              {createdPollData && !hasVoted && (
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-4 text-center">Cast your vote first!</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      variant="outline"
+                      className="h-20 text-lg"
+                      onClick={() => handleVote(createdPollData.option_a)}
+                      disabled={isVoting}
+                    >
+                      {createdPollData.option_a}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 text-lg"
+                      onClick={() => handleVote(createdPollData.option_b)}
+                      disabled={isVoting}
+                    >
+                      {createdPollData.option_b}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {hasVoted && (
+                <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-700 dark:text-green-300 text-center">
+                    ✅ Your vote has been recorded!
+                  </p>
+                </div>
+              )}
+
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground mb-2">Share this link with friends:</p>
                 <div className="flex items-center gap-2">
