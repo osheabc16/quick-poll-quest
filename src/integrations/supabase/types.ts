@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       polls: {
         Row: {
+          allow_comments: boolean
           created_at: string
           expires_at: string | null
           id: string
@@ -27,6 +28,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          allow_comments?: boolean
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -38,6 +40,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          allow_comments?: boolean
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -76,6 +79,7 @@ export type Database = {
       }
       votes: {
         Row: {
+          comment: string | null
           created_at: string
           id: string
           option_choice: string
@@ -83,6 +87,7 @@ export type Database = {
           voter_ip: string | null
         }
         Insert: {
+          comment?: string | null
           created_at?: string
           id?: string
           option_choice: string
@@ -90,6 +95,7 @@ export type Database = {
           voter_ip?: string | null
         }
         Update: {
+          comment?: string | null
           created_at?: string
           id?: string
           option_choice?: string
