@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +22,7 @@ const Create = () => {
     optionB: "",
     expiration: "",
     allowComments: true,
+    commentPrompt: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdPollId, setCreatedPollId] = useState<string | null>(null);
@@ -125,6 +127,7 @@ const Create = () => {
       optionB: "",
       expiration: "",
       allowComments: true,
+      commentPrompt: "",
     });
     setCreatedPollId(null);
   };
@@ -284,6 +287,24 @@ const Create = () => {
                   Allow voters to leave comments? 💬
                 </Label>
               </div>
+
+              {formData.allowComments && (
+                <div className="space-y-2">
+                  <Label htmlFor="commentPrompt">
+                    Comment Prompt (Optional)
+                  </Label>
+                  <Textarea
+                    id="commentPrompt"
+                    placeholder="e.g., Tell us why you chose this option..."
+                    value={formData.commentPrompt}
+                    onChange={(e) => setFormData({ ...formData, commentPrompt: e.target.value })}
+                    className="min-h-[80px]"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This will be shown to voters when they can leave a comment
+                  </p>
+                </div>
+              )}
 
               <Button
                 type="submit"
