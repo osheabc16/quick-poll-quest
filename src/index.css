@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 46 100% 95%;
     --foreground: 248 100% 25%;
 
     --card: 0 0% 100%;
@@ -36,7 +36,7 @@ All colors MUST be HSL.
     --input: 180 30% 92%;
     --ring: 265 100% 55%;
 
-    --radius: 0rem;
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +100,6 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-crayon;
+    @apply bg-background text-foreground;
   }
 }
