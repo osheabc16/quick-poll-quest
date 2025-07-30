@@ -229,74 +229,89 @@ const Dashboard = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {polls.map((poll) => (
-              <Card key={poll.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-lg leading-tight">{poll.question}</CardTitle>
-                    {getStatusBadge(poll)}
-                  </div>
-                  <CardDescription className="text-sm">
-                    {poll.option_a} vs {poll.option_b}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                    <div>
-                      <strong>{poll.vote_count}</strong> votes
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold">Your Polls</h2>
+                <p className="text-sm text-muted-foreground">
+                  {polls.length} poll{polls.length !== 1 ? 's' : ''} created
+                </p>
+              </div>
+              <Button onClick={() => navigate("/create")} size="lg">
+                <Plus className="w-4 h-4 mr-2" />
+                Create New Poll
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {polls.map((poll) => (
+                <Card key={poll.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-lg leading-tight">{poll.question}</CardTitle>
+                      {getStatusBadge(poll)}
                     </div>
-                    <div>
-                      Created {formatDistanceToNow(new Date(poll.created_at), { addSuffix: true })}
+                    <CardDescription className="text-sm">
+                      {poll.option_a} vs {poll.option_b}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                      <div>
+                        <strong>{poll.vote_count}</strong> votes
+                      </div>
+                      <div>
+                        Created {formatDistanceToNow(new Date(poll.created_at), { addSuffix: true })}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    {getExpiryText(poll)}
-                  </div>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      {getExpiryText(poll)}
+                    </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/poll/${poll.id}/results`)}
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      Results
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyPollLink(poll.id)}
-                    >
-                      <Copy className="w-4 h-4 mr-1" />
-                      Copy Link
-                    </Button>
-                    
-                    {!poll.is_closed && (!poll.expires_at || new Date(poll.expires_at) > new Date()) && (
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => closePoll(poll.id)}
+                        onClick={() => navigate(`/poll/${poll.id}/results`)}
                       >
-                        <Square className="w-4 h-4 mr-1" />
-                        Close
+                        <Eye className="w-4 h-4 mr-1" />
+                        Results
                       </Button>
-                    )}
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deletePoll(poll.id)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyPollLink(poll.id)}
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copy Link
+                      </Button>
+                      
+                      {!poll.is_closed && (!poll.expires_at || new Date(poll.expires_at) > new Date()) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => closePoll(poll.id)}
+                        >
+                          <Square className="w-4 h-4 mr-1" />
+                          Close
+                        </Button>
+                      )}
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deletePoll(poll.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </main>
