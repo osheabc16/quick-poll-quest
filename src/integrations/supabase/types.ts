@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      polls: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_closed: boolean
+          option_a: string
+          option_b: string
+          question: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_closed?: boolean
+          option_a: string
+          option_b: string
+          question: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_closed?: boolean
+          option_a?: string
+          option_b?: string
+          question?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -37,6 +73,38 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_choice: string
+          poll_id: string
+          voter_ip: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_choice: string
+          poll_id: string
+          voter_ip?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_choice?: string
+          poll_id?: string
+          voter_ip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
