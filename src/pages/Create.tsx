@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Sparkles } from "lucide-react";
+import { ArrowLeft, Copy, Sparkles, Share2, BarChart3, Plus, Settings } from "lucide-react";
 
 const Create = () => {
   const { user, loading } = useAuth();
@@ -29,6 +29,8 @@ const Create = () => {
   const [createdPollData, setCreatedPollData] = useState<any>(null);
   const [isVoting, setIsVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
+  const [voteComment, setVoteComment] = useState("");
+  const [voteResults, setVoteResults] = useState<any>(null);
 
   if (loading) {
     return (
@@ -134,10 +136,31 @@ const Create = () => {
         .insert({
           poll_id: createdPollId,
           option_choice: choice,
-          voter_ip: null, // We don't track IP for authenticated users
+          voter_ip: null,
+          comment: voteComment.trim() || null,
         });
 
       if (error) throw error;
+
+      // Fetch quick results after voting
+      const { data: votes } = await supabase
+        .from("votes")
+        .select("option_choice")
+        .eq("poll_id", createdPollId);
+
+      if (votes) {
+        const optionACount = votes.filter(v => v.option_choice === createdPollData.option_a).length;
+        const optionBCount = votes.filter(v => v.option_choice === createdPollData.option_b).length;
+        const total = votes.length;
+        
+        setVoteResults({
+          optionA: { count: optionACount, percentage: Math.round((optionACount / total) * 100) },
+          optionB: { count: optionBCount, percentage: Math.round((optionBCount / total) * 100) },
+          total,
+          userChoice: choice,
+          userComment: voteComment.trim() || null
+        });
+      }
 
       setHasVoted(true);
       toast({
@@ -168,6 +191,8 @@ const Create = () => {
     setCreatedPollId(null);
     setCreatedPollData(null);
     setHasVoted(false);
+    setVoteComment("");
+    setVoteResults(null);
   };
 
   if (createdPollId) {
@@ -176,7 +201,7 @@ const Create = () => {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b border-border p-4">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <Button
               variant="ghost"
               onClick={() => navigate("/dashboard")}
@@ -188,77 +213,195 @@ const Create = () => {
           </div>
         </header>
         
-        <main className="max-w-2xl mx-auto p-6">
-          <Card className="text-center">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-center gap-2 text-2xl">
-                <Sparkles className="w-6 h-6 text-primary" />
-                Poll Created Successfully!
-              </CardTitle>
-              <CardDescription>
-                Your poll is ready to share with friends
-              </CardDescription>
+        <main className="max-w-4xl mx-auto p-6 space-y-6">
+          {/* Celebration Header */}
+          <Card className="text-center bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+            <CardHeader className="pb-4">
+              <div className="animate-scale-in">
+                <CardTitle className="flex items-center justify-center gap-3 text-3xl mb-2">
+                  <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+                  Your poll is live!
+                  <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+                </CardTitle>
+                <CardDescription className="text-lg">
+                  You can vote now and share the link with your friends.
+                </CardDescription>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column - Share & Actions */}
+            <div className="space-y-6">
+              {/* Share Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Share2 className="w-5 h-5" />
+                    Share Your Poll
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <Label className="text-xs text-muted-foreground">Poll URL</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <code className="flex-1 p-2 bg-background rounded text-sm break-all">
+                        {pollLink}
+                      </code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyPollLink}
+                        className="shrink-0"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Quick Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button onClick={resetForm} variant="outline" className="w-full justify-start">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Another Poll
+                  </Button>
+                  <Button 
+                    onClick={() => navigate("/dashboard")} 
+                    variant="outline" 
+                    className="w-full justify-start"
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Go to My Polls
+                  </Button>
+                  <Button 
+                    onClick={() => navigate(`/poll/${createdPollId}`)} 
+                    variant="default" 
+                    className="w-full justify-start"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    View Public Poll Page
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Voting Experience */}
+            <div className="space-y-6">
               {/* Voting Section */}
               {createdPollData && !hasVoted && (
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-4 text-center">Cast your vote first!</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button
-                      variant="outline"
-                      className="h-20 text-lg"
-                      onClick={() => handleVote(createdPollData.option_a)}
-                      disabled={isVoting}
-                    >
-                      {createdPollData.option_a}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-20 text-lg"
-                      onClick={() => handleVote(createdPollData.option_b)}
-                      disabled={isVoting}
-                    >
-                      {createdPollData.option_b}
-                    </Button>
-                  </div>
-                </div>
+                <Card className="border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-center">{createdPollData.question}</CardTitle>
+                    <CardDescription className="text-center">
+                      Cast your vote as the poll creator!
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-3">
+                      <Button
+                        variant="outline"
+                        className="h-16 text-lg hover-scale"
+                        onClick={() => handleVote(createdPollData.option_a)}
+                        disabled={isVoting}
+                      >
+                        {createdPollData.option_a}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-16 text-lg hover-scale"
+                        onClick={() => handleVote(createdPollData.option_b)}
+                        disabled={isVoting}
+                      >
+                        {createdPollData.option_b}
+                      </Button>
+                    </div>
+
+                    {/* Comment Field */}
+                    {createdPollData.allow_comments && (
+                      <div className="space-y-2">
+                        <Label htmlFor="vote-comment">
+                          {createdPollData.comment_prompt || "Add a comment (optional)"}
+                        </Label>
+                        <Textarea
+                          id="vote-comment"
+                          placeholder="Share your thoughts..."
+                          value={voteComment}
+                          onChange={(e) => setVoteComment(e.target.value)}
+                          className="min-h-[80px]"
+                          disabled={isVoting}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               )}
 
-              {hasVoted && (
-                <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-                  <p className="text-sm text-green-700 dark:text-green-300 text-center">
-                    ✅ Your vote has been recorded!
-                  </p>
-                </div>
-              )}
+              {/* Results Preview */}
+              {hasVoted && voteResults && (
+                <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                      <BarChart3 className="w-5 h-5" />
+                      Your Vote & Live Results
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                        ✅ You voted for: <span className="font-bold">{voteResults.userChoice}</span>
+                      </p>
+                      {voteResults.userComment && (
+                        <p className="text-sm text-green-700 dark:text-green-300 mt-1 italic">
+                          "{voteResults.userComment}"
+                        </p>
+                      )}
+                    </div>
 
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground mb-2">Share this link with friends:</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 p-2 bg-background rounded text-sm break-all">
-                    {pollLink}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyPollLink}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex gap-4 justify-center">
-                <Button onClick={resetForm} variant="outline">
-                  Create Another Poll
-                </Button>
-                <Button onClick={() => navigate(`/poll/${createdPollId}/results`)}>
-                  View Results
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>{createdPollData.option_a}</span>
+                          <span className="font-medium">{voteResults.optionA.count} votes ({voteResults.optionA.percentage}%)</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div 
+                            className="bg-primary h-2 rounded-full transition-all duration-500" 
+                            style={{ width: `${voteResults.optionA.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>{createdPollData.option_b}</span>
+                          <span className="font-medium">{voteResults.optionB.count} votes ({voteResults.optionB.percentage}%)</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div 
+                            className="bg-secondary h-2 rounded-full transition-all duration-500" 
+                            style={{ width: `${voteResults.optionB.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-muted-foreground text-center pt-2">
+                        Total votes: {voteResults.total}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
         </main>
       </div>
     );
