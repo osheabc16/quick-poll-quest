@@ -131,11 +131,14 @@ const Create = () => {
     
     setIsVoting(true);
     try {
+      // Convert the actual option text to the database format
+      const optionChoice = choice === createdPollData.option_a ? "option_a" : "option_b";
+      
       const { error } = await supabase
         .from("votes")
         .insert({
           poll_id: createdPollId,
-          option_choice: choice,
+          option_choice: optionChoice,
           voter_ip: null,
           comment: voteComment.trim() || null,
         });
@@ -149,8 +152,8 @@ const Create = () => {
         .eq("poll_id", createdPollId);
 
       if (votes) {
-        const optionACount = votes.filter(v => v.option_choice === createdPollData.option_a).length;
-        const optionBCount = votes.filter(v => v.option_choice === createdPollData.option_b).length;
+        const optionACount = votes.filter(v => v.option_choice === "option_a").length;
+        const optionBCount = votes.filter(v => v.option_choice === "option_b").length;
         const total = votes.length;
         
         setVoteResults({
