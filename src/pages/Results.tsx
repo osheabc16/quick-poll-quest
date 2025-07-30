@@ -18,7 +18,8 @@ import {
   Users,
   Clock,
   Copy,
-  ArrowLeft
+  ArrowLeft,
+  MessageSquareQuote
 } from "lucide-react";
 
 interface Poll {
@@ -30,6 +31,7 @@ interface Poll {
   is_closed: boolean;
   allow_comments: boolean;
   created_at: string;
+  creator_comment: string | null;
 }
 
 interface Vote {
@@ -53,8 +55,6 @@ export default function Results() {
   const [poll, setPoll] = useState<Poll | null>(null);
   const [results, setResults] = useState<ResultData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [commentSummary, setCommentSummary] = useState<string>("");
-  const [loadingSummary, setLoadingSummary] = useState(false);
   const [pollNotFound, setPollNotFound] = useState(false);
 
   useEffect(() => {
@@ -62,12 +62,6 @@ export default function Results() {
       fetchPollAndResults();
     }
   }, [id]);
-
-  useEffect(() => {
-    if (results && poll?.allow_comments && results.comments.length > 0) {
-      generateCommentSummary();
-    }
-  }, [results, poll]);
 
   const fetchPollAndResults = async () => {
     try {
@@ -117,32 +111,6 @@ export default function Results() {
     }
   };
 
-  const generateCommentSummary = async () => {
-    if (!results?.comments.length) return;
-    
-    setLoadingSummary(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('summarize-comments', {
-        body: { 
-          comments: results.comments,
-          question: poll?.question,
-          optionA: poll?.option_a,
-          optionB: poll?.option_b
-        }
-      });
-
-      if (error) {
-        console.error("Error generating summary:", error);
-        return;
-      }
-
-      setCommentSummary(data.summary);
-    } catch (error) {
-      console.error("Error calling edge function:", error);
-    } finally {
-      setLoadingSummary(false);
-    }
-  };
 
   const getWinner = () => {
     if (!results) return null;
@@ -227,7 +195,18 @@ export default function Results() {
             <CardTitle className="text-3xl mb-2 animate-fade-in">
               {poll.question}
             </CardTitle>
-            <p className="text-muted-foreground text-lg">
+            {poll.creator_comment && (
+              <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <MessageSquareQuote className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">Creator's Perspective</span>
+                </div>
+                <p className="text-sm italic text-muted-foreground">
+                  "{poll.creator_comment}"
+                </p>
+              </div>
+            )}
+            <p className="text-muted-foreground text-lg mt-4">
               Voting is now closed. Here's how it ended.
             </p>
           </CardHeader>
@@ -338,37 +317,11 @@ export default function Results() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* AI Summary */}
-              <div className="border-l-4 border-primary p-4 bg-primary/5 rounded-r-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <Brain className="w-5 h-5 text-primary" />
-                  <span className="font-medium text-primary">
-                    Summary of Reasons (AI-generated)
-                  </span>
-                </div>
-                {loadingSummary ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    <span className="text-sm text-muted-foreground">
-                      Analyzing comments...
-                    </span>
-                  </div>
-                ) : commentSummary ? (
-                  <p className="text-sm leading-relaxed">{commentSummary}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">
-                    Unable to generate summary at this time.
-                  </p>
-                )}
-              </div>
-
-              <Separator />
-
               {/* Individual Comments */}
               <div className="space-y-3">
                 <h4 className="font-medium flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  Individual Comments ({results.comments.length})
+                  Voter Comments ({results.comments.length})
                 </h4>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {results.comments.map((comment, index) => (

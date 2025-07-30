@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           allow_comments: boolean
           created_at: string
+          creator_comment: string | null
           expires_at: string | null
           id: string
           is_closed: boolean
@@ -30,6 +31,7 @@ export type Database = {
         Insert: {
           allow_comments?: boolean
           created_at?: string
+          creator_comment?: string | null
           expires_at?: string | null
           id?: string
           is_closed?: boolean
@@ -42,6 +44,7 @@ export type Database = {
         Update: {
           allow_comments?: boolean
           created_at?: string
+          creator_comment?: string | null
           expires_at?: string | null
           id?: string
           is_closed?: boolean

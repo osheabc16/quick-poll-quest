@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Sparkles, Share2, BarChart3, Plus, Settings } from "lucide-react";
+import { ArrowLeft, Copy, Sparkles, Share2, BarChart3 } from "lucide-react";
 
 const Create = () => {
   const { user, loading } = useAuth();
@@ -23,6 +23,7 @@ const Create = () => {
     expiration: "",
     allowComments: true,
     commentPrompt: "",
+    creatorComment: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdPollId, setCreatedPollId] = useState<string | null>(null);
@@ -90,6 +91,7 @@ const Create = () => {
           option_a: formData.optionA.trim(),
           option_b: formData.optionB.trim(),
           expires_at: expiresAt?.toISOString() || null,
+          creator_comment: formData.creatorComment.trim() || null,
         })
         .select()
         .single();
@@ -190,6 +192,7 @@ const Create = () => {
       expiration: "",
       allowComments: true,
       commentPrompt: "",
+      creatorComment: "",
     });
     setCreatedPollId(null);
     setCreatedPollData(null);
@@ -234,9 +237,8 @@ const Create = () => {
           </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Share & Actions */}
+            {/* Left Column - Share */}
             <div className="space-y-6">
-              {/* Share Section */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -460,6 +462,22 @@ const Create = () => {
                     <SelectItem value="1w">1 week</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="creator-comment">
+                  Add your perspective (optional)
+                </Label>
+                <Textarea
+                  id="creator-comment"
+                  placeholder="Share why you created this poll or your own thoughts..."
+                  value={formData.creatorComment}
+                  onChange={(e) => setFormData({ ...formData, creatorComment: e.target.value })}
+                  className="min-h-[80px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This will be shown with your poll results as the creator's perspective
+                </p>
               </div>
 
               <div className="flex items-center space-x-2">
