@@ -90,8 +90,8 @@ export default function Results() {
         return;
       }
 
-      const optionACount = votes.filter(v => v.option_choice === pollData.option_a).length;
-      const optionBCount = votes.filter(v => v.option_choice === pollData.option_b).length;
+      const optionACount = votes.filter(v => v.option_choice === 'a').length;
+      const optionBCount = votes.filter(v => v.option_choice === 'b').length;
       const comments = votes
         .filter(v => v.comment && v.comment.trim())
         .map(v => v.comment!);

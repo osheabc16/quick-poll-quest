@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle, Clock, AlertCircle, BarChart3 } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, BarChart3, Bug } from "lucide-react";
+import { debugVotingIssue } from "@/utils/debug";
 
 interface Poll {
   id: string;
@@ -114,8 +115,9 @@ export default function Vote() {
         return;
       }
 
-      const optionACount = data.filter(vote => vote.option_choice === poll?.option_a).length;
-      const optionBCount = data.filter(vote => vote.option_choice === poll?.option_b).length;
+      // Count votes for option 'a' and 'b' (database values)
+      const optionACount = data.filter(vote => vote.option_choice === 'a').length;
+      const optionBCount = data.filter(vote => vote.option_choice === 'b').length;
       const totalVotes = optionACount + optionBCount;
 
       setResults({
@@ -133,20 +135,48 @@ export default function Vote() {
 
     setSubmitting(true);
     try {
+      // Convert option_a/option_b to a/b for database constraint
+      const optionChoice = selectedOption === 'option_a' ? 'a' : 'b';
+      
+      // First, verify the poll exists and is accessible
+      const { data: pollCheck, error: pollError } = await supabase
+        .from("polls")
+        .select("id")
+        .eq("id", poll.id)
+        .single();
+        
+      if (pollError || !pollCheck) {
+        console.error("Poll not accessible:", pollError);
+        toast({
+          title: "Error",
+          description: "Poll not found or not accessible",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const { error } = await supabase
         .from("votes")
         .insert({
           poll_id: poll.id,
-          option_choice: selectedOption,
+          option_choice: optionChoice,
           comment: comment.trim() || null,
           voter_ip: null // We're not tracking IP for privacy
         });
 
       if (error) {
         console.error("Error submitting vote:", error);
+        console.error("Error details:", {
+          poll_id: poll.id,
+          option_choice: optionChoice,
+          comment: comment.trim() || null,
+          error_code: error.code,
+          error_message: error.message,
+          error_details: error.details
+        });
         toast({
           title: "Error",
-          description: "Failed to submit your vote. Please try again.",
+          description: `Failed to submit your vote: ${error.message}`,
           variant: "destructive",
         });
         return;
@@ -154,7 +184,7 @@ export default function Vote() {
 
       // Store vote in localStorage to prevent double voting
       const voteData = {
-        option_choice: selectedOption,
+        option_choice: optionChoice, // Store the database format ('a' or 'b')
         comment: comment.trim() || null
       };
       localStorage.setItem(`poll_vote_${poll.id}`, JSON.stringify(voteData));
@@ -198,6 +228,26 @@ export default function Vote() {
   const getOptionPercentage = (optionCount: number) => {
     if (!results || results.total_votes === 0) return 0;
     return Math.round((optionCount / results.total_votes) * 100);
+  };
+
+  const runDebugTest = async () => {
+    if (!poll?.id) return;
+    
+    console.log("🔍 Running debug test...");
+    const result = await debugVotingIssue(poll.id);
+    
+    if (result.success) {
+      toast({
+        title: "Debug Test Passed ✅",
+        description: "All database operations are working correctly",
+      });
+    } else {
+      toast({
+        title: "Debug Test Failed ❌",
+        description: `${result.error}: ${result.details?.message || 'Unknown error'}`,
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -249,13 +299,25 @@ export default function Vote() {
                   You Voted
                 </Badge>
               ) : null}
+              {/* Debug button - only show in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={runDebugTest}
+                  className="ml-2"
+                >
+                  <Bug className="h-3 w-3 mr-1" />
+                  Debug
+                </Button>
+              )}
             </div>
             <CardTitle className="text-2xl font-bold">{poll.question}</CardTitle>
             <p className="text-muted-foreground">
               {isPollClosed() 
                 ? "This poll is now closed." 
                 : hasVoted 
-                  ? `You're on Team ${userVote?.option_choice === poll.option_a ? poll.option_a : poll.option_b}! Here's the current vote breakdown.`
+                  ? `You're on Team ${userVote?.option_choice === 'a' ? poll.option_a : poll.option_b}! Here's the current vote breakdown.`
                   : "Choose your side and see live results instantly!"
               }
             </p>
@@ -279,7 +341,7 @@ export default function Vote() {
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <CheckCircle className="h-5 w-5 text-primary" />
                   <span className="font-semibold text-primary">
-                    You voted for {userVote?.option_choice === poll.option_a ? poll.option_a : poll.option_b}!
+                    You voted for {userVote?.option_choice === 'a' ? poll.option_a : poll.option_b}!
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -298,9 +360,9 @@ export default function Vote() {
                   <div className="space-y-3">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className={`font-medium ${userVote?.option_choice === poll.option_a ? "text-primary font-bold" : ""}`}>
+                        <span className={`font-medium ${userVote?.option_choice === 'a' ? "text-primary font-bold" : ""}`}>
                           {poll.option_a}
-                          {userVote?.option_choice === poll.option_a && " 👈"}
+                          {userVote?.option_choice === 'a' && " 👈"}
                         </span>
                         <span className="text-sm font-medium">
                           {results.option_a_count} votes ({getOptionPercentage(results.option_a_count)}%)
@@ -314,9 +376,9 @@ export default function Vote() {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className={`font-medium ${userVote?.option_choice === poll.option_b ? "text-primary font-bold" : ""}`}>
+                        <span className={`font-medium ${userVote?.option_choice === 'b' ? "text-primary font-bold" : ""}`}>
                           {poll.option_b}
-                          {userVote?.option_choice === poll.option_b && " 👈"}
+                          {userVote?.option_choice === 'b' && " 👈"}
                         </span>
                         <span className="text-sm font-medium">
                           {results.option_b_count} votes ({getOptionPercentage(results.option_b_count)}%)
